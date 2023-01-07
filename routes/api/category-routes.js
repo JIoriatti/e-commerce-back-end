@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { Category, Product } = require('../../models');
+const { update } = require('../../models/Product');
 
 // The `/api/categories` endpoint
 
@@ -44,34 +45,41 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   // update a category by its `id` value
-  try{
-    const categoryData = await Category.update(req.body, {
-      where:{
-        id: req.params.id,
-      }
-    });
+  try{  
+    const categoryData = await Category.update(req.body,
+    {
+      where: {id: req.params.id}
+    }
+  );
     if(!categoryData[0]){
-      res.status(404).json({message: 'No category found with this id.'});
-      return;
+      res.status(404).json({message: `No category with id: ${req.params.id} found.`})
     }
     res.status(200).json(categoryData);
   }catch(err){
     res.status(500).json(err);
   }
+
 });
 
 router.delete('/:id', async (req, res) => {
   // delete a category by its `id` value
   try{
+    //Using the findOne method first to access category name to use in response (not neccissary but wanted to try it out)
+    const categoryName = await Category.findOne(
+      {
+        where: {id: req.params.id}
+      });
+    //Destroy method to delete the category with given id in request body params.
     const categoryData = await Category.destroy({
       where:{
         id: req.params.id
       }
     });
-    if(!categoryData[0]){
-      res.status(404).json({message: "id given does not match any category."})
+    if(!categoryData){
+      res.status(404).json({message: `id: ${req.params.id} given does not match any category.`});
+      return;
     }
-    res.status(200).json({message: `${categoryData.category_name} category successfully deleted.`});
+    res.status(200).json(`${categoryName.category_name} category deleted successfully.`);
   }catch(err){
     res.status(500).json(err);
   }
